@@ -5,14 +5,14 @@ import java.util.Objects;
 public class Element {
 
     private final String value;
-    private final long column;
+    private final int column;
 
-    public Element(String value, long column) {
+    public Element(String value, int column) {
         this.value = value;
         this.column = column;
     }
 
-    public long getColumn() {
+    public int getColumn() {
         return column;
     }
 

@@ -25,7 +25,7 @@ public class Main {
         Map<Element, Group> groupByElement = new HashMap<>();
         long startTime = System.currentTimeMillis();
         try (BufferedReader br = new BufferedReader(new FileReader(args[0]))) {
-            long countGroup = 0L;
+            int countGroup = 0;
             Set<Group> mergedGroup = new HashSet<>();
             while (br.ready()) {
                 String lineFromFile = br.readLine();
@@ -43,7 +43,7 @@ public class Main {
                 if (!validLine) {
                     continue;
                 }
-                long countColumn = 0L;
+                int countColumn = 0;
                 Group newGroup = new Group(countGroup);
                 Line line = new Line(lineFromFile, newGroup);
                 allLines.put(lineFromFile, line);
@@ -57,10 +57,16 @@ public class Main {
 
                         List<Element> findElements = elementsByValue.get(elementFromFile);
                         if (findElements != null) {
-                            long finalCountColumn = countColumn;
-                            element = findElements.stream().filter(e ->
+                            int finalCountColumn = countColumn;
+                            Optional<Element> maybe = findElements.stream().filter(e ->
                                     e.getColumn() == finalCountColumn)
-                                    .findFirst().orElse(new Element(elementFromFile, countColumn));
+                                    .findFirst();
+                            if (maybe.isPresent()) {
+                                element = maybe.get();
+                            } else {
+                                element = new Element(elementFromFile, countColumn);
+                                findElements.add(element);
+                            }
                         } else {
                             List<Element> elements = new LinkedList<>();
                             element = new Element(elementFromFile, countColumn);
@@ -111,15 +117,18 @@ public class Main {
 
             System.out.println("Количество групп с количеством строк больше 1: " + countGroup);
 
-            long count = 0;
+            int count = 0;
             for (Set<Line> lin : lines) {
                 sb.append("Группа ").append(++count).append("\n");
                 for (Line line : lin) {
                     sb.append(line.getValue()).append("\n");
                 }
+                if (sb.length()/5000 > 2) {
+                    bw.write(sb.toString());
+                    sb.setLength(0);
+                }
             }
             bw.write(sb.toString());
-            sb.setLength(0);
         } catch (IOException ex) {
             System.err.println(ex.getMessage());
         }

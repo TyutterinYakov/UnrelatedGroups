@@ -3,17 +3,17 @@ package app.company.reader.model;
 import java.util.Objects;
 
 public class Group {
-    private long number;
+    private int number;
 
-    public Group(long number) {
+    public Group(int number) {
         this.number = number;
     }
 
-    public long getNumber() {
+    public int getNumber() {
         return number;
     }
 
-    public void setNumber(long number) {
+    public void setNumber(int number) {
         this.number = number;
     }
 
