@@ -15,14 +15,13 @@ import static java.util.stream.Collectors.toSet;
 
 public class Main {
 
-//    private static final Map<Long, Set<String>> linesByGroup = new HashMap<>();
+    private static final Pattern pattern = Pattern.compile("^(\")[\\d]*(\")$");
     private static final Map<String, Line> allLines = new HashMap<>();
+    private static final Map<String, List<Element>> elementsByValue = new HashMap<>();
+    private static final Map<Element, Group> groupByElement = new HashMap<>();
 
 
     public static void main(String[] args) {
-        Pattern pattern = Pattern.compile("^(\")[\\d]*(\")$");
-        Map<String, List<Element>> elementsByValue = new HashMap<>();
-        Map<Element, Group> groupByElement = new HashMap<>();
         long startTime = System.currentTimeMillis();
         try (BufferedReader br = new BufferedReader(new FileReader(args[0]))) {
             int countGroup = 0;
@@ -33,13 +32,7 @@ public class Main {
                     continue;
                 }
                 String[] elementsFromFile = lineFromFile.split(";");
-                boolean validLine = true;
-                for (String lineElement : elementsFromFile) {
-                    if (!pattern.matcher(lineElement).matches()) {
-                        validLine = false;
-                        break;
-                    }
-                }
+                boolean validLine = validateLine(elementsFromFile);
                 if (!validLine) {
                     continue;
                 }
@@ -47,48 +40,16 @@ public class Main {
                 Group newGroup = new Group(countGroup);
                 Line line = new Line(lineFromFile, newGroup);
                 allLines.put(lineFromFile, line);
-//                Set<String> lines = new HashSet<>();
-//                linesByGroup.put(newGroup.getNumber(), lines);
-//                lines.add(lineFromFile);
 
                 Element element;
                 for (String elementFromFile : elementsFromFile) {
                     if (!elementFromFile.equals("\"\"")) {
-
-                        List<Element> findElements = elementsByValue.get(elementFromFile);
-                        if (findElements != null) {
-                            int finalCountColumn = countColumn;
-                            Optional<Element> maybe = findElements.stream().filter(e ->
-                                    e.getColumn() == finalCountColumn)
-                                    .findFirst();
-                            if (maybe.isPresent()) {
-                                element = maybe.get();
-                            } else {
-                                element = new Element(elementFromFile, countColumn);
-                                findElements.add(element);
-                            }
-                        } else {
-                            List<Element> elements = new LinkedList<>();
-                            element = new Element(elementFromFile, countColumn);
-                            elements.add(element);
-                            elementsByValue.put(elementFromFile, elements);
-                        }
-
-
-                        Group group = groupByElement.get(element);
-                        if (group != null && group.getNumber() != newGroup.getNumber()) {
-                            mergedGroup.add(group);
-                        } else {
-                            groupByElement.put(element, newGroup);
-                        }
+                        element = findElementOrCreate(countColumn, elementFromFile);
+                        findElementGroupOrAdd(mergedGroup, newGroup, element);
                     }
                     countColumn++;
                 }
-                for (Group group : mergedGroup) {
-//                    Set<String> remove = linesByGroup.remove(group.getNumber());
-//                    linesByGroup.get(newGroup.getNumber()).addAll(remove);
-                    group.setNumber(newGroup.getNumber());
-                }
+                mergedGroups(mergedGroup, newGroup);
                 mergedGroup.clear();
                 countGroup++;
             }
@@ -102,7 +63,59 @@ public class Main {
         System.out.println("Время выполнения(c): " + duration);
     }
 
+    //Валидация строки
+    private static boolean validateLine(String[] elementsFromFile) {
+        for (String lineElement : elementsFromFile) {
+            if (!pattern.matcher(lineElement).matches()) {
+                return false;
+            }
+        }
+        return true;
+    }
 
+    /*Поиск группы элемента. Если найдена - добавляем в коллекцию для дальнейшего слияния.
+    * Если нет - привязываем новую новую группу к элементу*/
+    private static void findElementGroupOrAdd(Set<Group> mergedGroup, Group newGroup, Element element) {
+        Group group = groupByElement.get(element);
+        if (group != null) {
+            mergedGroup.add(group);
+        } else {
+            groupByElement.put(element, newGroup);
+        }
+    }
+
+    /*Ищем элементы с переданным значением из файла(elementFromFile). Если находим - ищем среди них его с такой же
+    * позицией в строке, иначе создаем новый и сохраняем */
+    private static Element findElementOrCreate(int countColumn, String elementFromFile) {
+        Element element;
+        List<Element> findElements = elementsByValue.get(elementFromFile);
+        if (findElements != null) {
+            Optional<Element> maybe = findElements.stream().filter(e ->
+                    e.getColumn() == countColumn)
+                    .findFirst();
+            if (maybe.isPresent()) {
+                element = maybe.get();
+            } else {
+                element = new Element(elementFromFile, countColumn);
+                findElements.add(element);
+            }
+        } else {
+            List<Element> elements = new LinkedList<>();
+            element = new Element(elementFromFile, countColumn);
+            elements.add(element);
+            elementsByValue.put(elementFromFile, elements);
+        }
+        return element;
+    }
+
+    //Слияние групп в одну
+    private static void mergedGroups(Set<Group> mergedGroup, Group newGroup) {
+        for (Group group : mergedGroup) {
+            group.setNumber(newGroup.getNumber());
+        }
+    }
+
+    //Запись в файл
     private static void writer() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter("result.txt"))) {
             StringBuilder sb = new StringBuilder();
