@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.toSet;
 
 public class Main {
 
-    private static final Pattern pattern = Pattern.compile("^(\")[\\d]*(\")$");
+    private static final Pattern pattern = Pattern.compile("^(\")([\\d]+[.]?+[\\d]+)?(\")$");
     private static final Map<String, Line> allLines = new HashMap<>();
     private static final Map<String, List<Element>> elementsByValue = new HashMap<>();
     private static final Map<Element, Group> groupByElement = new HashMap<>();
@@ -33,7 +33,7 @@ public class Main {
                 }
                 String[] elementsFromFile = lineFromFile.split(";");
                 boolean validLine = validateLine(elementsFromFile);
-                if (!validLine) {
+                if (!validLine || elementsFromFile.length == 0) {
                     continue;
                 }
                 int countColumn = 0;
