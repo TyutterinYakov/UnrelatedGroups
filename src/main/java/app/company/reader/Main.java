@@ -26,7 +26,7 @@ public class Main {
         long startTime = System.currentTimeMillis();
         try (BufferedReader br = new BufferedReader(new FileReader(args[0]))) {
             int countGroup = 0;
-            Set<Group> mergedGroup = new HashSet<>();
+            List<Group> mergedGroup = new LinkedList<>();
             while (br.ready()) {
                 String lineFromFile = br.readLine();
                 if (allLines.containsKey(lineFromFile)) {
@@ -76,7 +76,7 @@ public class Main {
 
     /*Поиск группы элемента. Если найдена - добавляем в коллекцию для дальнейшего слияния.
     * Если нет - привязываем новую новую группу к элементу*/
-    private static void findElementGroupOrAdd(Set<Group> mergedGroup, Group newGroup, Element element) {
+    private static void findElementGroupOrAdd(List<Group> mergedGroup, Group newGroup, Element element) {
         Group group = groupByElement.get(element);
         if (group != null) {
             mergedGroup.add(group);
@@ -110,7 +110,7 @@ public class Main {
     }
 
     //Слияние групп в одну
-    private static void mergedGroups(Set<Group> mergedGroup, Group newGroup) {
+    private static void mergedGroups(List<Group> mergedGroup, Group newGroup) {
         for (Group group : mergedGroup) {
             group.setNumber(newGroup.getNumber());
         }
