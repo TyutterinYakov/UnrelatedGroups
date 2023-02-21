@@ -15,7 +15,8 @@ import static java.util.stream.Collectors.toSet;
 
 public class Main {
 
-    private static final Pattern pattern = Pattern.compile("(^(\")([\\d]+[.]?+[\\d]+)?(\")$)?");
+    //Если требуется проверить соответствие строке конкретного вида: "(^(\")([\\d]+[.]?+[\\d]+)?(\")$)?" - "64377.1"
+    private static final Pattern pattern = Pattern.compile("(^(\")[^\"]*(\")$)?");
     private static final Map<String, Line> allLines = new HashMap<>();
     private static final Map<String, List<Element>> elementsByValue = new HashMap<>();
     private static final Map<Element, Group> groupByElement = new HashMap<>();
