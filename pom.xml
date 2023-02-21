@@ -25,7 +25,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>app.company.reader.Main</mainClass>
+                            <mainClass>app.company.app.company.reader.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

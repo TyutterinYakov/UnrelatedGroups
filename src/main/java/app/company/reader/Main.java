@@ -15,18 +15,28 @@ import static java.util.stream.Collectors.toSet;
 
 public class Main {
 
-    //Если требуется проверить соответствие строке конкретного вида: "(^(\")([\\d]+[.]?+[\\d]+)?(\")$)?" - "64377.1"
     private static final Pattern pattern = Pattern.compile("(^(\")[^\"]*(\")$)?");
     private static final Map<String, Line> allLines = new HashMap<>();
     private static final Map<String, List<Element>> elementsByValue = new HashMap<>();
     private static final Map<Element, Group> groupByElement = new HashMap<>();
+    private static final Map<Group, Set<Element>> elementsByGroup = new HashMap<>();
+
+    //Валидация строки
+    private static boolean validateLine(String[] elementsFromFile) {
+        for (String lineElement : elementsFromFile) {
+            if (!pattern.matcher(lineElement).matches()) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
         try (BufferedReader br = new BufferedReader(new FileReader(args[0]))) {
             int countGroup = 0;
-            List<Group> mergedGroup = new LinkedList<>();
+            Set<Group> mergedGroup = new HashSet<>();
             while (br.ready()) {
                 String lineFromFile = br.readLine();
                 if (allLines.containsKey(lineFromFile)) {
@@ -64,39 +74,32 @@ public class Main {
         System.out.println("Время выполнения(c): " + duration);
     }
 
-    //Валидация строки
-    private static boolean validateLine(String[] elementsFromFile) {
-        for (String lineElement : elementsFromFile) {
-            if (!pattern.matcher(lineElement).matches()) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     /*Поиск группы элемента. Если найдена - добавляем в коллекцию для дальнейшего слияния.
     * Если нет - привязываем новую новую группу к элементу*/
-    private static void findElementGroupOrAdd(List<Group> mergedGroup, Group newGroup, Element element) {
+    private static void findElementGroupOrAdd(Set<Group> mergedGroup, Group newGroup, Element element) {
         Group group = groupByElement.get(element);
         if (group != null) {
             mergedGroup.add(group);
         } else {
             groupByElement.put(element, newGroup);
+            elementsByGroup.computeIfAbsent(newGroup, e -> new HashSet<>()).add(element);
         }
     }
 
     /*Ищем элементы с переданным значением из файла(elementFromFile). Если находим - ищем среди них его с такой же
     * позицией в строке, иначе создаем новый и сохраняем */
     private static Element findElementOrCreate(int countColumn, String elementFromFile) {
-        Element element;
+        Element element = null;
         List<Element> findElements = elementsByValue.get(elementFromFile);
         if (findElements != null) {
-            Optional<Element> maybe = findElements.stream().filter(e ->
-                    e.getColumn() == countColumn)
-                    .findFirst();
-            if (maybe.isPresent()) {
-                element = maybe.get();
-            } else {
+            for (Element findElement : findElements) {
+                if (findElement.getColumn() == countColumn) {
+                    element = findElement;
+                    break;
+                }
+            }
+            if (element == null) {
                 element = new Element(elementFromFile, countColumn);
                 findElements.add(element);
             }
@@ -110,11 +113,20 @@ public class Main {
     }
 
     //Слияние групп в одну
-    private static void mergedGroups(List<Group> mergedGroup, Group newGroup) {
+    private static void mergedGroups(Set<Group> mergedGroup, Group newGroup) {
+        Set<Element> elementsByGroupNew = elementsByGroup.computeIfAbsent(newGroup, e -> new HashSet<>());
         for (Group group : mergedGroup) {
+            if (!group.equals(newGroup)) {
+                Set<Element> remove = elementsByGroup.remove(group);
+                if (remove != null) {
+                    elementsByGroupNew.addAll(remove);
+                    remove.forEach(element -> groupByElement.get(element).setNumber(newGroup.getNumber()));
+                }
+            }
             group.setNumber(newGroup.getNumber());
         }
     }
+
 
     //Запись в файл
     private static void writer() {

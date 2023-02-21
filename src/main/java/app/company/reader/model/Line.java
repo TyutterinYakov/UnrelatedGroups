@@ -12,12 +12,12 @@ public class Line {
         this.group = group;
     }
 
-    public String getValue() {
-        return value;
-    }
-
     public Group getGroup() {
         return group;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     @Override
